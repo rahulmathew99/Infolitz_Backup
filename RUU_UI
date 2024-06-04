@@ -130,20 +130,19 @@ String HTML = "<!DOCTYPE html>\
         <h2>User interface</h2>\
         <p>Ruuvi Gateway sets up a WiFi hotspot and a webserver that provides the user interface for configuration over HTTP. The user interface can be accessed in any major browser. To connect to the user interface connect to the hotspot <strong>'Configure Ruuvi Gateway XXXX'</strong> (it does not require a password). Once connected, open your browser and enter <strong>http://10.10.0.1</strong>. After the initial configuration is complete, you will be able to access the gateway from the LAN in the same way.</p>\
         <ul>\
-            <li><button onclick='blinkLED()'>Greeting window</button></li>\
+            <li><button onclick='blinkLED()'>Internet connection settings</button></li>\
             <li>\
-                <button onclick='printMessage()'>Internet connection settings</button>\
+                <button onclick='printMessage()'> Connection via Wi-Fi</button>\
                 <ul>\
-                    <li><button onclick='navigateToWifiSettings()'>Connection via Wi-Fi</button></li>\
-                    <li><a href='#'>Connection via Ethernet</a></li>\
+                    <li><button onclick='navigateToWifiSettings()'>Connection via Ethernet</button></li>\
+                    <li><a href='#'>Software update</a></li>\
                 </ul>\
             </li>\
-            <li><a href='#'>Software update</a></li>\
             <li><a href='#'>Automatic configuration download</a></li>\
             <li><a href='#'>Automatic updates</a></li>\
             <li><a href='#'>Access Settings from LAN</a></li>\
+            <li><a href='#'>Cloud Options</a></li>\
             <li>\
-                <a href='#'>Cloud Options</a>\
                 <ul>\
                     <li><a href='#'>Backend: HTTP(s)</a></li>\
                     <li><a href='#'>Backend: MQTT(s)</a></li>\
