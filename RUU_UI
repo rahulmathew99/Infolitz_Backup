@@ -1,0 +1,228 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+// SSID & Password
+const char *ssid = "Alcodex";
+const char *password = "Adx@2013";
+WebServer server(80);  // Object of WebServer(HTTP port, 80 is default)
+
+void setup() {
+    Serial.begin(115200);
+    pinMode(LED_BUILTIN, OUTPUT); // Set the LED pin as an output
+
+    Serial.println("Try Connecting to ");
+    Serial.println(ssid);
+    
+    // Connect to your Wi-Fi modem
+    WiFi.begin(ssid, password);
+    
+    // Check if Wi-Fi is connected to the Wi-Fi network
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi connected successfully");
+    Serial.print("Got IP: ");
+    Serial.println(WiFi.localIP());  // Show ESP32 IP on serial
+    
+    server.on("/", handle_root);
+    server.on("/blink", handle_blink); // Route for blinking the LED
+    server.on("/printMessage", handle_printMessage); // Route for printing a message to the console
+    server.on("/wifiSettings", handle_wifiSettings); // Route for the Wi-Fi settings page
+    server.begin();
+    Serial.println("HTTP server started");
+    delay(100);
+}
+
+void loop() {
+    server.handleClient();
+}
+
+// HTML & CSS contents which display on web server
+String HTML = "<!DOCTYPE html>\
+<html lang='en'>\
+<head>\
+    <meta charset='UTF-8'>\
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\
+    <title>GW Web-UI</title>\
+    <style>\
+        body {\
+            font-family: Arial, sans-serif;\
+            margin: 0;\
+            padding: 0;\
+            background-color: #f9f9f9;\
+        }\
+        .container {\
+            padding: 20px;\
+            margin: 50px auto;\
+            width: 80%;\
+            max-width: 800px;\
+            background-color: #fff;\
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\
+            border-radius: 8px;\
+        }\
+        h1 {\
+            color: #333;\
+        }\
+        h2 {\
+            color: #555;\
+        }\
+        p {\
+            color: #666;\
+        }\
+        ul {\
+            list-style-type: none;\
+            padding: 0;\
+            text-align: left;\
+        }\
+        li {\
+            margin-bottom: 10px;\
+        }\
+        button, a {\
+            display: inline-block;\
+            background-color: #007BFF;\
+            color: white;\
+            padding: 10px 20px;\
+            border: none;\
+            border-radius: 5px;\
+            text-align: center;\
+            text-decoration: none;\
+            font-size: 16px;\
+            width: 100%;\
+            max-width: 250px;\
+            margin: 10px 0;\
+            transition: background-color 0.3s ease;\
+        }\
+        button:hover, a:hover {\
+            background-color: #0056b3;\
+        }\
+    </style>\
+    <script>\
+        function blinkLED() {\
+            var xhr = new XMLHttpRequest();\
+            xhr.open('GET', '/blink', true);\
+            xhr.onreadystatechange = function() {\
+                if (xhr.readyState == 4 && xhr.status == 200) {\
+                    alert('LED blinked');\
+                }\
+            };\
+            xhr.send();\
+        }\
+        function printMessage() {\
+            var xhr = new XMLHttpRequest();\
+            xhr.open('GET', '/printMessage', true);\
+            xhr.onreadystatechange = function() {\
+                if (xhr.readyState == 4 && xhr.status == 200) {\
+                    console.log('Message sent to server');\
+                }\
+            };\
+            xhr.send();\
+        }\
+        function navigateToWifiSettings() {\
+            window.location.href = '/wifiSettings';\
+        }\
+    </script>\
+</head>\
+<body>\
+    <div class='container'>\
+        <h1>GW Web-UI</h1>\
+        <h2>User interface</h2>\
+        <p>Ruuvi Gateway sets up a WiFi hotspot and a webserver that provides the user interface for configuration over HTTP. The user interface can be accessed in any major browser. To connect to the user interface connect to the hotspot <strong>'Configure Ruuvi Gateway XXXX'</strong> (it does not require a password). Once connected, open your browser and enter <strong>http://10.10.0.1</strong>. After the initial configuration is complete, you will be able to access the gateway from the LAN in the same way.</p>\
+        <ul>\
+            <li><button onclick='blinkLED()'>Greeting window</button></li>\
+            <li>\
+                <button onclick='printMessage()'>Internet connection settings</button>\
+                <ul>\
+                    <li><button onclick='navigateToWifiSettings()'>Connection via Wi-Fi</button></li>\
+                    <li><a href='#'>Connection via Ethernet</a></li>\
+                </ul>\
+            </li>\
+            <li><a href='#'>Software update</a></li>\
+            <li><a href='#'>Automatic configuration download</a></li>\
+            <li><a href='#'>Automatic updates</a></li>\
+            <li><a href='#'>Access Settings from LAN</a></li>\
+            <li>\
+                <a href='#'>Cloud Options</a>\
+                <ul>\
+                    <li><a href='#'>Backend: HTTP(s)</a></li>\
+                    <li><a href='#'>Backend: MQTT(s)</a></li>\
+                </ul>\
+            </li>\
+        </ul>\
+    </div>\
+</body>\
+</html>";
+
+// Wi-Fi settings page HTML
+String wifiSettingsHTML = "<!DOCTYPE html>\
+<html lang='en'>\
+<head>\
+    <meta charset='UTF-8'>\
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\
+    <title>Wi-Fi Settings</title>\
+    <style>\
+        body {\
+            font-family: Arial, sans-serif;\
+            margin: 0;\
+            padding: 0;\
+            background: url('https://via.placeholder.com/1920x1080') no-repeat center center fixed;\
+            background-size: cover;\
+        }\
+        .container {\
+            padding: 20px;\
+            margin: 50px auto;\
+            width: 80%;\
+            max-width: 800px;\
+            background-color: rgba(255, 255, 255, 0.8);\
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\
+            border-radius: 8px;\
+        }\
+        h1 {\
+            color: #333;\
+        }\
+        p {\
+            color: #666;\
+        }\
+    </style>\
+</head>\
+<body>\
+    <div class='container'>\
+        <h1>Wi-Fi Settings</h1>\
+        <p>Configure your Wi-Fi settings here.</p>\
+        <!-- Add your Wi-Fi settings form here -->\
+    </div>\
+</body>\
+</html>";
+
+// Handle root url (/)
+void handle_root() {
+    server.send(200, "text/html", HTML);
+}
+
+// Handle blink route
+void handle_blink() {
+    blinkLED();
+    server.send(200, "text/plain", "LED blinked");
+}
+
+// Handle printMessage route
+void handle_printMessage() {
+    Serial.println("Internet connection settings clicked");
+    server.send(200, "text/plain", "Message printed in console");
+}
+
+// Handle Wi-Fi settings page
+void handle_wifiSettings() {
+    server.send(200, "text/html", wifiSettingsHTML);
+}
+
+// Function to blink the LED
+void blinkLED() {
+    for (int i = 0; i < 3; i++) { // Blink the LED 3 times
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(500);
+        digitalWrite(LED_BUILTIN, LOW);
+        delay(500);
+    }
+}
